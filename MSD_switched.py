@@ -87,11 +87,11 @@ A1[1,0] = -k_true/m_true
 A1[1,1] = -b_true/m_true
 B1[1,0] = 1/m_true;
 
-# mass quadruples!
+# mass doubled!
 A2[0,1] = 1.0;
-A2[1,0] = -k_true/m_true/4
-A2[1,1] = -b_true/m_true/4
-B2[1,0] = 1/m_true/4;
+A2[1,0] = -k_true/m_true/2
+A2[1,1] = -b_true/m_true/2
+B2[1,0] = 1/m_true/2;
 
 
 
@@ -126,7 +126,8 @@ v[0,:] = np.random.normal(0.0, r1_true, T)
 v[1,:] = np.random.normal(0.0, r2_true, T)
 y = np.zeros((Ny,T), dtype=float)
 y[0,:] = z_sim[0,:-1]
-y[1,:] = (-k_true*z_sim[0,:-1] -b_true*z_sim[1,:-1] + u[0,:])/m_true
+y[1,:t_fail] = (-k_true*z_sim[0,:t_fail] -b_true*z_sim[1,:t_fail] + u[0,:t_fail])/m_true
+y[1,t_fail:] = (-k_true*z_sim[0,t_fail:-1] -b_true*z_sim[1,t_fail:-1] + u[0,t_fail:])/(m_true*2)
 y = y + v; # add noise
 
 plt.subplot(2,1,1)

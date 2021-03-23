@@ -70,13 +70,13 @@ model {
     r2 ~ cauchy(0, 1.0);
     q2 ~ cauchy(0, 1.0);
     // prior on parameters
-    m1 ~ normal(1.8, 0.2);
-    k1 ~ normal(0.3, 0.2);
-    b1 ~ normal(0.6, 0.3);
-    m2 ~ normal(3, 2.0); // we think the mass gets bigger
-    k2 ~ normal(0.3, 2.0);
-    b2 ~ normal(0.6, 2.0);
-    t ~ uniform(1,N); // prior is uniform over t
+    m1 ~ normal(2.0, 0.01);
+    k1 ~ normal(0.25, 0.02);
+    b1 ~ normal(0.75, 0.02);
+    m2 ~ normal(3, 1.0); // we think the mass gets bigger
+    k2 ~ normal(0.25, 0.02);
+    b2 ~ normal(0.75, 0.02);
+    t ~ uniform(1,N); // prior is uniform over the window
 
     before = floor_search(t,1,N); // should return an integer, stan doesn't allow real -> int conversion
     delt = t - floor(t); // the timestep within the update 
