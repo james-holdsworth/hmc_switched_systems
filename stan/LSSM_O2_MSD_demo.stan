@@ -1,20 +1,37 @@
 functions {
-    int floor_search(real x, int min_val, int max_val) {
-        // truncate the space (it's okay)
-        if (min_val > x)
-            return min_val;
-        else if (max_val < x) {
-            return max_val;
+    // int floor_search(real x, int min_val, int max_val) {
+    //     real y = floor(x);
+    //     int range = max_val - min_val;
+    //     real mid_pt = min_val;
+    //     // truncate the space (it's okay)
+    //     if (min_val > x)
+    //         return min_val;
+    //     else if (max_val < x) {
+    //         return max_val;
+    //     }
+    //     while (1)  {
+    //         if (range == 0) return mid_pt; // should be cast t integer
+    //         range = (range + 1) / 2;
+    //         mid_pt += y > mid_pt ? range : -range;
+    //     }
+    //     return min_val;
+    // }
+    int floor_search(real y, int min_val, int max_val) {
+        real x = floor(y);
+        int range = (max_val - min_val + 1)/2; // We add 1 to make sure that truncation doesn't exclude a number
+        int mid_pt = min_val + range;
+        int out;
+        while(range > 0) {
+            if(x == mid_pt){
+                out = mid_pt;
+                range = 0;
+            } else {
+                // figure out if range == 1
+                range =  (range+1)/2; 
+                mid_pt = x > mid_pt ? mid_pt + range: mid_pt - range; 
+            }
         }
-        real y = floor(x);
-        int range = max_val - min_val;
-        real mid_pt = min_val;
-        while (1)  {
-            if (range == 0) return mid_pt; // should be cast t integer
-            range = (range + 1) / 2;
-            mid_pt += y > mid_pt ? range : -range;
-        }
-        return min_val
+        return out;
     }
 }
 
@@ -39,7 +56,7 @@ parameters {
     real<lower=0.0> b2;       // damper parameter
     vector<lower=0.0>[D] r2;  // measurement noise stds
     vector<lower=0.0>[O] q2;  // process noise stds
-    real<lower=0.0,upper=N> t; // time of change
+    real<lower=1.0,upper=N> t; // time of change
     matrix[O,N] z;           // states
 }
 
@@ -53,19 +70,19 @@ model {
     r2 ~ cauchy(0, 1.0);
     q2 ~ cauchy(0, 1.0);
     // prior on parameters
-    m1 ~ cauchy(0, 1.0);
-    k1 ~ cauchy(0, 1.0);
-    b1 ~ cauchy(0, 1.0);
-    m2 ~ cauchy(0, 1.0);
-    k2 ~ cauchy(0, 1.0);
-    b2 ~ cauchy(0, 1.0);
-    t ~ uniform(0,N); // prior is uniform over t
+    m1 ~ normal(1.8, 0.2);
+    k1 ~ normal(0.3, 0.2);
+    b1 ~ normal(0.6, 0.3);
+    m2 ~ normal(3, 2.0); // we think the mass gets bigger
+    k2 ~ normal(0.3, 2.0);
+    b2 ~ normal(0.6, 2.0);
+    t ~ uniform(1,N); // prior is uniform over t
 
-    before = floor_search(t,0,N); // should return an integer, stan doesn't allow real -> int conversion
-    delt = t - before; // the timestep within the update 
+    before = floor_search(t,1,N); // should return an integer, stan doesn't allow real -> int conversion
+    delt = t - floor(t); // the timestep within the update 
 
     // initial state prior
-    z[1,1] ~ normal(0,5);
+    z[1,1] ~ normal(3,0.05);
     z[2,1] ~ normal(0,0.05); // small prior on velocity (going to start the sim with zero speed every time)
    
     // state likelihood (apparently much better to do univariate sampling twice)
@@ -73,8 +90,8 @@ model {
     z[2,2:before] ~ normal(z[2,1:before-1] + -(k1*T/m1)*z[1,1:before-1] + -(b1*T/m1)*z[2,1:before-1] + (T/m1)*u[1,1:before-1], q1[2]); // input affects second state only
     z_inter[1] = z[1,before] + delt*z[2,before];
     z_inter[2] = z[2,before] + -(k1*delt/m1)*z[1,before] + -(b1*delt/m1)*z[2,before] + (delt/m1)*u[1,before];
-    z[1,before+1] ~ normal(z_inter[1] + (T - delt)*z_inter[2], delt*q1[1]/T + (T-delt)*q2[1]/T);
-    z[2,before+1] ~ normal(z_inter[2] + -(k2*(T-delt)/m2)*z_inter[1] + -(b2*(T - delt)/m2)*z_inter[2] + ((T - delt)/m2)*u[1,before],  delt*q1[2]/T + (T-delt)*q2[2]/T); // input affects second state only
+    z[1,before+1] ~ normal(z_inter[1] + (T - delt)*z_inter[2], (delt/T)*q1[1] + (T-delt)*q2[1]/T);
+    z[2,before+1] ~ normal(z_inter[2] + -(k2*(T-delt)/m2)*z_inter[1] + -(b2*(T - delt)/m2)*z_inter[2] + ((T - delt)/m2)*u[1,before], (delt/T)*q1[2] + (T-delt)*q2[2]/T); // input affects second state only
     z[1,before+2:N] ~ normal(z[1,before+1:N-1] + T*z[2,before+1:N-1], q2[1]);
     z[2,before+2:N] ~ normal(z[2,before+1:N-1] + -(k2*T/m2)*z[1,before+1:N-1] + -(b2*T/m2)*z[2,before+1:N-1] + (T/m2)*u[1,before+1:N-1], q2[2]); // input affects second state only
     

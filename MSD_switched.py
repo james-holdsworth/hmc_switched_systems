@@ -41,7 +41,7 @@ from jax.ops import index, index_add, index_update
 from jax.config import config
 
 # optimisation module imports (needs to be done before the jax confix update)
-from optimisation import log_barrier_cost, solve_chance_logbarrier
+# from optimisation import log_barrier_cost, solve_chance_logbarrier
 
 config.update("jax_enable_x64", True)           # run jax in 64 bit mode for accuracy
 
@@ -58,7 +58,7 @@ r1_true = 0.1        # measurement noise standard deviation
 r2_true = 0.01
 q1_true = 0.05       # process noise standard deviation
 q2_true = 0.005      # process noise standard deviation
-m_true = 1;
+m_true = 2
 b_true = 0.7
 k_true = 0.25
 
@@ -87,11 +87,11 @@ A1[1,0] = -k_true/m_true
 A1[1,1] = -b_true/m_true
 B1[1,0] = 1/m_true;
 
-# mass doubled!
+# mass quadruples!
 A2[0,1] = 1.0;
-A2[1,0] = -k_true/m_true/2
-A2[1,1] = -b_true/m_true/2
-B2[1,0] = 1/m_true/2;
+A2[1,0] = -k_true/m_true/4
+A2[1,1] = -b_true/m_true/4
+B2[1,0] = 1/m_true/4;
 
 
 
@@ -111,7 +111,7 @@ u = np.random.uniform(-0.5,0.5, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # spicy
-t_fail = 97
+t_fail = 50
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
@@ -173,7 +173,7 @@ k1_samps = traces['k1'].squeeze()
 b1_samps = traces['b1'].squeeze() # single valued parameters shall 1D numpy objects! The squeeze has been squoze
 q1_samps = np.transpose(traces['q1'],(1,0)) 
 r1_samps = np.transpose(traces['r1'],(1,0))
-
+t_samps = traces['t'].squeeze()
 m2_samps = traces['m2'].squeeze()
 k2_samps = traces['k2'].squeeze()
 b2_samps = traces['b2'].squeeze() # single valued parameters shall 1D numpy objects! The squeeze has been squoze
@@ -200,7 +200,7 @@ plot_trace(b1_samps,2,4,3,'b')
 plot_trace(q1plt1,2,4,4,'q1')
 plot_trace(q2plt1,2,4,5,'q2')
 plot_trace(r1plt1,2,4,6,'r1')
-plot_trace(r2plt1,2,4,7,'r2')
+plot_trace(t_samps,2,4,7,'t')
 plt.show()
 
 plot_trace(m2_samps,2,4,1,'m')
