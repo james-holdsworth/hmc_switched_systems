@@ -111,7 +111,7 @@ u = np.random.uniform(-0.5,0.5, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # spicy
-t_fail = 50
+t_fail = 100 # no failure at 220
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
