@@ -32,7 +32,7 @@ k_true = 0.25
 
 Nx = 2; # number of states
 Ny = 2; # number of measurements
-Nu = 1; # number of inputs
+Nu = 2; # number of inputs
 
 #----------------- Simulate the system-------------------------------------------#
 
@@ -50,12 +50,16 @@ A1[0,1] = 1.0;
 A1[1,0] = -k_true/m_true
 A1[1,1] = -b_true/m_true
 B1[1,0] = 1/m_true;
+B1[1,1] = 1/m_true;
 
-# mass doubled for system 2
+# actuators have an issue
+s1 = 0.25;
+s2 = 0;
 A2[0,1] = 1.0;
-A2[1,0] = -k_true/m_true/2
-A2[1,1] = -b_true/m_true/2
-B2[1,0] = 1/m_true/2;
+A2[1,0] = -k_true/m_true
+A2[1,1] = -b_true/m_true
+B2[1,0] = s1/m_true # s1 and s2 modify the actuator gain
+B2[1,1] = s2/m_true
 
 z_sim = np.zeros((Nx,T+1), dtype=float) # state history allocation
 
@@ -73,7 +77,7 @@ u = np.random.uniform(-0.5,0.5, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # time of switch
-t_switch = 33
+t_switch = 100 # T = t_switch implies no failure
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
@@ -90,8 +94,8 @@ v[1,:] = np.random.normal(0.0, r2_true, T)
 # simulated measurements 
 y = np.zeros((Ny,T), dtype=float)
 y[0,:] = z_sim[0,:-1]
-y[1,:t_switch] = (-k_true*z_sim[0,:t_switch] -b_true*z_sim[1,:t_switch] + u[0,:t_switch])/m_true
-y[1,t_switch:] = (-k_true*z_sim[0,t_switch:-1] -b_true*z_sim[1,t_switch:-1] + u[0,t_switch:])/(m_true*2)
+y[1,:t_switch] = (-k_true*z_sim[0,:t_switch] -b_true*z_sim[1,:t_switch] + u[0,:t_switch] + u[1,:t_switch])/m_true
+y[1,t_switch:] = (-k_true*z_sim[0,t_switch:-1] -b_true*z_sim[1,t_switch:-1] + s1*u[0,t_switch:] + s2*u[1,t_switch:])/(m_true) # s1, s2 modified inputs
 y = y + v; # add noise to measurements
 
 if plot_bool:
@@ -108,7 +112,7 @@ if plot_bool:
 
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
-model_name = 'LSSM_O2_MSD_demo'
+model_name = 'MSD_actuator_failure'
 path = 'stan/'
 if Path(path+model_name+'.pkl').is_file():
     model = pickle.load(open(path+model_name+'.pkl', 'rb'))
@@ -134,49 +138,33 @@ z_samps = np.transpose(traces['z'],(1,0,2)) # Ns, Nx, T --> Nx, Ns, T
 
 
 # parameter samples
-m1_samps = traces['m1'].squeeze()
-k1_samps = traces['k1'].squeeze()
-b1_samps = traces['b1'].squeeze() # single valued parameters shall 1D numpy objects! The squeeze has been squoze
-q1_samps = np.transpose(traces['q1'],(1,0)) 
-r1_samps = np.transpose(traces['r1'],(1,0))
+m_samps = traces['m'].squeeze()
+k_samps = traces['k'].squeeze()
+b_samps = traces['b'].squeeze() # single valued parameters shall 1D numpy objects! The squeeze has been squoze
+q_samps = np.transpose(traces['q'],(1,0)) 
+r_samps = np.transpose(traces['r'],(1,0))
 t_samps = traces['t'].squeeze()
-m2_samps = traces['m2'].squeeze()
-k2_samps = traces['k2'].squeeze()
-b2_samps = traces['b2'].squeeze()
-q2_samps = np.transpose(traces['q2'],(1,0)) 
-r2_samps = np.transpose(traces['r2'],(1,0))
+s1_samps = traces['s1'].squeeze()
+s2_samps = traces['s2'].squeeze()
 
 # plot the initial parameter marginal estimates
-q1plt1 = q1_samps[0,:].squeeze()
-q2plt1 = q1_samps[1,:].squeeze()
-r1plt1 = r1_samps[0,:].squeeze()
-r2plt1 = r1_samps[1,:].squeeze()
-
-# plot the initial parameter marginal estimates
-q1plt2 = q2_samps[0,:].squeeze()
-q2plt2 = q2_samps[1,:].squeeze()
-r1plt2 = r2_samps[0,:].squeeze()
-r2plt2 = r2_samps[1,:].squeeze()
+q1plt = q_samps[0,:].squeeze()
+q2plt = q_samps[1,:].squeeze()
+r1plt = r_samps[0,:].squeeze()
+r2plt = r_samps[1,:].squeeze()
 
 
-plot_trace(m1_samps,2,4,1,'m')
+plot_trace(m_samps,2,5,1,'m')
 plt.title('HMC inferred parameters')
-plot_trace(k1_samps,2,4,2,'k')
-plot_trace(b1_samps,2,4,3,'b')
-plot_trace(q1plt1,2,4,4,'q1')
-plot_trace(q2plt1,2,4,5,'q2')
-plot_trace(r1plt1,2,4,6,'r1')
-plot_trace(t_samps,2,4,7,'t')
-plt.show()
-
-plot_trace(m2_samps,2,4,1,'m')
-plt.title('HMC inferred parameters')
-plot_trace(k2_samps,2,4,2,'k')
-plot_trace(b2_samps,2,4,3,'b')
-plot_trace(q1plt2,2,4,4,'q1')
-plot_trace(q2plt2,2,4,5,'q2')
-plot_trace(r1plt2,2,4,6,'r1')
-plot_trace(r2plt2,2,4,7,'r2')
+plot_trace(k_samps,2,5,2,'k')
+plot_trace(b_samps,2,5,3,'b')
+plot_trace(q1plt,2,5,4,'q1')
+plot_trace(q2plt,2,5,5,'q2')
+plot_trace(r1plt,2,5,6,'r1')
+plot_trace(r2plt,2,5,7,'r2')
+plot_trace(t_samps,2,5,8,'t')
+plot_trace(s1_samps,2,5,9,'s1')
+plot_trace(s2_samps,2,5,10,'s2')
 plt.show()
 
 # plot some of the initial marginal state estimates

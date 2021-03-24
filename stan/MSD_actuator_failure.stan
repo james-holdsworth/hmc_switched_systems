@@ -53,6 +53,8 @@ model {
     b ~ normal(0.75, 0.02);
 
     t ~ uniform(1,N); // prior is uniform over the window
+    s1 ~ uniform(0.0,1.0); // incredible quality
+    s2 ~ uniform(0.0,1.0); // prior knowledge
 
     before = floor_search(t,1,N); // should return an integer, stan doesn't allow real -> int conversion
     delt = t - floor(t); // the timestep within the update 
@@ -62,18 +64,18 @@ model {
     z[2,1] ~ normal(0,0.05); // small prior on velocity (going to start the sim with zero speed every time)
    
     // state likelihood (apparently much better to do univariate sampling twice)
-    z[1,2:before] ~ normal(z[1,1:before-1] + T*z[2,1:before-1], q1[1]);
-    z[2,2:before] ~ normal(z[2,1:before-1] + -(k1*T/m1)*z[1,1:before-1] + -(b1*T/m1)*z[2,1:before-1] + (T/m1)*u[1,1:before-1], q1[2]); // input affects second state only
+    z[1,2:before] ~ normal(z[1,1:before-1] + T*z[2,1:before-1], q[1]);
+    z[2,2:before] ~ normal(z[2,1:before-1] + -(k*T/m)*z[1,1:before-1] + -(b*T/m)*z[2,1:before-1] + (T/m)*(u[1,1:before-1]+u[2,1:before-1]), q[2]); // input affects second state only
     z_inter[1] = z[1,before] + delt*z[2,before];
-    z_inter[2] = z[2,before] + -(k1*delt/m1)*z[1,before] + -(b1*delt/m1)*z[2,before] + (delt/m1)*u[1,before];
-    z[1,before+1] ~ normal(z_inter[1] + (T - delt)*z_inter[2], (delt/T)*q1[1] + (T-delt)*q2[1]/T);
-    z[2,before+1] ~ normal(z_inter[2] + -(k2*(T-delt)/m2)*z_inter[1] + -(b2*(T - delt)/m2)*z_inter[2] + ((T - delt)/m2)*u[1,before], (delt/T)*q1[2] + (T-delt)*q2[2]/T); // input affects second state only
-    z[1,before+2:N] ~ normal(z[1,before+1:N-1] + T*z[2,before+1:N-1], q2[1]);
-    z[2,before+2:N] ~ normal(z[2,before+1:N-1] + -(k2*T/m2)*z[1,before+1:N-1] + -(b2*T/m2)*z[2,before+1:N-1] + (T/m2)*u[1,before+1:N-1], q2[2]); // input affects second state only
+    z_inter[2] = z[2,before] + -(k*delt/m)*z[1,before] + -(b*delt/m)*z[2,before] + (delt/m)*(u[1,before]+u[2,before]);
+    z[1,before+1] ~ normal(z_inter[1] + (T - delt)*z_inter[2], (delt/T)*q[1] + (T-delt)*q[1]/T);
+    z[2,before+1] ~ normal(z_inter[2] + -(k*(T-delt)/m)*z_inter[1] + -(b*(T - delt)/m)*z_inter[2] + ((T - delt)/m)*(s1*u[1,before] + s2*u[2,before]), (delt/T)*q[2] + (T-delt)*q[2]/T); // input affects second state only
+    z[1,before+2:N] ~ normal(z[1,before+1:N-1] + T*z[2,before+1:N-1], q[1]);
+    z[2,before+2:N] ~ normal(z[2,before+1:N-1] + -(k*T/m)*z[1,before+1:N-1] + -(b*T/m)*z[2,before+1:N-1] + (T/m)*(s1*u[1,before+1:N-1] + s2*u[2,before+1:N-1]), q[2]); // input affects second state only
     
     // measurement likelihood
-    y[1,1:before] ~ normal(z[1,1:before], r1[1]); // measurement of first state only
-    y[2,1:before] ~ normal(-(k1/m1)*z[1,1:before] - (b1/m1)*z[2,1:before] + u[1,1:before]/m1, r1[2]); // acceleration measurement?
-    y[1,before+1:N] ~ normal(z[1,before+1:N], r2[1]); // measurement of first state only
-    y[2,before+1:N] ~ normal(-(k2/m2)*z[1,before+1:N] - (b2/m2)*z[2,before+1:N] + u[1,before+1:N]/m2, r2[2]); // acceleration measurement?
+    y[1,1:before] ~ normal(z[1,1:before], r[1]); // measurement of first state only
+    y[2,1:before] ~ normal(-(k/m)*z[1,1:before] - (b/m)*z[2,1:before] + (u[1,1:before]+u[2,1:before])/m, r[2]); // acceleration measurement?
+    y[1,before+1:N] ~ normal(z[1,before+1:N], r[1]); // measurement of first state only
+    y[2,before+1:N] ~ normal(-(k/m)*z[1,before+1:N] - (b/m)*z[2,before+1:N] + (s1*u[1,before+1:N] + s2*u[2,before+1:N])/m, r[2]); // acceleration measurement?
 }
