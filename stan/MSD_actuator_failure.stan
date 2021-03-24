@@ -1,32 +1,15 @@
 functions {
-    // int floor_search(real x, int min_val, int max_val) {
-    //     real y = floor(x);
-    //     int range = max_val - min_val;
-    //     real mid_pt = min_val;
-    //     // truncate the space (it's okay)
-    //     if (min_val > x)
-    //         return min_val;
-    //     else if (max_val < x) {
-    //         return max_val;
-    //     }
-    //     while (1)  {
-    //         if (range == 0) return mid_pt; // should be cast t integer
-    //         range = (range + 1) / 2;
-    //         mid_pt += y > mid_pt ? range : -range;
-    //     }
-    //     return min_val;
-    // }
     int floor_search(real y, int min_val, int max_val) {
-        real x = floor(y);
-        int range = (max_val - min_val + 1)/2; // We add 1 to make sure that truncation doesn't exclude a number
+        real x = floor(y); // stan floor function has return type real
+        int range = (max_val - min_val + 1)/2;
         int mid_pt = min_val + range;
         int out;
+        // find an int that matches x
         while(range > 0) {
             if(x == mid_pt){
                 out = mid_pt;
                 range = 0;
             } else {
-                // figure out if range == 1
                 range =  (range+1)/2; 
                 mid_pt = x > mid_pt ? mid_pt + range: mid_pt - range; 
             }
