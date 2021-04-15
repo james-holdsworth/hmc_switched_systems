@@ -17,13 +17,13 @@ import pickle
 plot_bool = False
 #----------------- Parameters ---------------------------------------------------#
 
-T = 100             # number of time steps to simulate and record measurements for
+T = 50             # number of time steps to simulate and record measurements for
 
 # true (simulation) parameters
 z1_0 = 3.0  # initial position
 z2_0 = 0.0  # initial velocity
 r1_true = 0.1 # measurement noise standard deviation
-r2_true = 0.01
+r2_true = 0.5
 q1_true = 0.05 # process noise standard deviation
 q2_true = 0.005 
 m_true = 2
@@ -77,7 +77,7 @@ u = np.random.uniform(-0.5,0.5, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # time of switch
-t_switch = 100 # T = t_switch implies no failure
+t_switch = 4 # T = t_switch implies no failure
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
