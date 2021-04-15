@@ -112,7 +112,7 @@ if plot_bool:
 
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
-model_name = 'MSD_actuator_failure'
+model_name = 'MSD_actuator_failure_naiive'
 path = 'stan/'
 if Path(path+model_name+'.pkl').is_file():
     model = pickle.load(open(path+model_name+'.pkl', 'rb'))
