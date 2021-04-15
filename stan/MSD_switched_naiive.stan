@@ -64,7 +64,7 @@ model {
     y[1,1] ~ normal(z[1,1], r1[1]);
     y[2,1] ~ normal(-(k1/m1)*z[1,1] - (b1/m1)*z[2,1] + u[1,1]/m1, r1[2]);
     for (idx in 2:(N)) {
-        if (idx < floor_search(t)) {
+        if (idx < floor_search(t,0,N)) {
             z[1,idx] ~ normal(z[1,idx-1] + T*z[2,idx-1], q1[1]);
             z[2,idx] ~ normal(z[2,idx-1] + -(k1*T/m1)*z[1,idx-1] + -(b1*T/m1)*z[2,idx-1] + (T/m1)*u[1,idx-1], q1[2]); // input affects second state only
             y[1,idx] ~ normal(z[1,idx], r1[1]);
