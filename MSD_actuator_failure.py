@@ -77,7 +77,7 @@ u = np.random.uniform(-0.5,0.5, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # time of switch
-t_switch = 4 # T = t_switch implies no failure
+t_switch = 46 # T = t_switch implies no failure
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
