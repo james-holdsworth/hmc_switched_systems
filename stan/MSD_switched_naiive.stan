@@ -64,7 +64,7 @@ model {
     y[1,1] ~ normal(z[1,1], r1[1]);
     y[2,1] ~ normal(-(k1/m1)*z[1,1] - (b1/m1)*z[2,1] + u[1,1]/m1, r1[2]);
     for (idx in 2:(N)) {
-        if (idx < floor(t)) {
+        if (idx < floor_search(t)) {
             z[1,idx] ~ normal(z[1,idx-1] + T*z[2,idx-1], q1[1]);
             z[2,idx] ~ normal(z[2,idx-1] + -(k1*T/m1)*z[1,idx-1] + -(b1*T/m1)*z[2,idx-1] + (T/m1)*u[1,idx-1], q1[2]); // input affects second state only
             y[1,idx] ~ normal(z[1,idx], r1[1]);
@@ -73,7 +73,7 @@ model {
             z[1,idx] ~ normal(z[1,idx-1] + T*z[2,idx-1], q2[1]);
             z[2,idx] ~ normal(z[2,idx-1] + -(k2*T/m2)*z[1,idx-1] + -(b2*T/m2)*z[2,idx-1] + (T/m2)*u[1,idx-1], q2[2]); // input affects second state only
             y[1,idx] ~ normal(z[1,idx], r2[1]);
-            y[2,idx] ~ normal(-(k2/m2)*z[1,idx] - (b2/m2)*z[2,idx] + u[1,idx]/m2, r[2]);
+            y[2,idx] ~ normal(-(k2/m2)*z[1,idx] - (b2/m2)*z[2,idx] + u[1,idx]/m2, r2[2]);
         }
     }
 }
