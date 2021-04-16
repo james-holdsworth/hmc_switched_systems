@@ -108,7 +108,7 @@ if plot_bool:
 
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
-model_name = 'LSSM_O2_MSD_demo'
+model_name = 'MSD_switched_linear_interp'
 path = 'stan/'
 if Path(path+model_name+'.pkl').is_file():
     model = pickle.load(open(path+model_name+'.pkl', 'rb'))
