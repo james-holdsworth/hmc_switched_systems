@@ -23,7 +23,7 @@ T = 50             # number of time steps to simulate and record measurements fo
 z1_0 = 3.0  # initial position
 z2_0 = 0.0  # initial velocity
 r1_true = 0.1 # measurement noise standard deviation
-r2_true = 0.5
+r2_true = 0.3
 q1_true = 0.05 # process noise standard deviation
 q2_true = 0.005 
 m_true = 2
@@ -46,6 +46,9 @@ B1 = np.zeros((Nx,Nu), dtype=float)
 A2 = np.zeros((Nx,Nx), dtype=float)
 B2 = np.zeros((Nx,Nu), dtype=float)
 
+A3 = np.zeros((Nx,Nx), dtype=float)
+B3 = np.zeros((Nx,Nu), dtype=float)
+
 A1[0,1] = 1.0;
 A1[1,0] = -k_true/m_true
 A1[1,1] = -b_true/m_true
@@ -53,13 +56,22 @@ B1[1,0] = 1/m_true;
 B1[1,1] = 1/m_true;
 
 # actuators have an issue
-s1 = 0.25;
-s2 = 0;
+s11 = 0.25;
+s21 = 0;
 A2[0,1] = 1.0;
 A2[1,0] = -k_true/m_true
 A2[1,1] = -b_true/m_true
-B2[1,0] = s1/m_true # s1 and s2 modify the actuator gain
-B2[1,1] = s2/m_true
+B2[1,0] = s11/m_true # s1 and s2 modify the actuator gain
+B2[1,1] = s21/m_true
+
+# actuators recover partially
+s12 = 0.6;
+s22 = 0.4;
+A3[0,1] = 1.0;
+A3[1,0] = -k_true/m_true
+A3[1,1] = -b_true/m_true
+B3[1,0] = s12/m_true # s1 and s2 modify the actuator gain
+B3[1,1] = s22/m_true
 
 z_sim = np.zeros((Nx,T+1), dtype=float) # state history allocation
 
@@ -77,14 +89,17 @@ u = np.random.uniform(-10,10, T*Nu)
 u = np.reshape(u, (Nu,T))
 
 # time of switch
-t_switch = T # T = t_switch implies no failure
+t_switch = 24 # T = t_switch implies no failure
+t_recover = 36 # T = t_switch implies no failure
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
     if k<t_switch:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A1,B1,1.0) + w_sim[:,k]
-    else:
+    elif k < t_recover:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A2,B2,1.0) + w_sim[:,k]
+    else:
+        z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A3,B3,1.0) + w_sim[:,k]
 
 # draw measurement noise
 v = np.zeros((Ny,T), dtype=float)
@@ -95,7 +110,8 @@ v[1,:] = np.random.normal(0.0, r2_true, T)
 y = np.zeros((Ny,T), dtype=float)
 y[0,:] = z_sim[0,:-1]
 y[1,:t_switch] = (-k_true*z_sim[0,:t_switch] -b_true*z_sim[1,:t_switch] + u[0,:t_switch] + u[1,:t_switch])/m_true
-y[1,t_switch:] = (-k_true*z_sim[0,t_switch:-1] -b_true*z_sim[1,t_switch:-1] + s1*u[0,t_switch:] + s2*u[1,t_switch:])/(m_true) # s1, s2 modified inputs
+y[1,t_switch:t_recover] = (-k_true*z_sim[0,t_switch:t_recover] -b_true*z_sim[1,t_switch:t_recover] + s11*u[0,t_switch:t_recover] + s21*u[1,t_switch:t_recover])/(m_true) # s1, s2 modified inputs
+y[1,t_recover:] = (-k_true*z_sim[0,t_recover:-1] -b_true*z_sim[1,t_recover:-1] + s12*u[0,t_recover:] + s22*u[1,t_recover:])/(m_true) # s1, s2 modified inputs
 y = y + v; # add noise to measurements
 
 if plot_bool:
@@ -112,7 +128,7 @@ if plot_bool:
 
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
-model_name = 'MSD_actuator_failure'
+model_name = 'MSD_actuator_failure_cascaded'
 path = 'stan/'
 if Path(path+model_name+'.pkl').is_file():
     model = pickle.load(open(path+model_name+'.pkl', 'rb'))
@@ -143,10 +159,12 @@ k_samps = traces['k'].squeeze()
 b_samps = traces['b'].squeeze() # single valued parameters shall 1D numpy objects! The squeeze has been squoze
 q_samps = np.transpose(traces['q'],(1,0)) 
 r_samps = np.transpose(traces['r'],(1,0))
-t_samps = traces['t'].squeeze()
-s1_samps = traces['s1'].squeeze()
-s2_samps = traces['s2'].squeeze()
-
+t1_samps = traces['t1'].squeeze()
+t2_samps = traces['t2'].squeeze()
+s11_samps = traces['s11'].squeeze()
+s21_samps = traces['s21'].squeeze()
+s12_samps = traces['s12'].squeeze()
+s22_samps = traces['s22'].squeeze()
 # plot the initial parameter marginal estimates
 q1plt = q_samps[0,:].squeeze()
 q2plt = q_samps[1,:].squeeze()
@@ -154,17 +172,19 @@ r1plt = r_samps[0,:].squeeze()
 r2plt = r_samps[1,:].squeeze()
 
 
-plot_trace(m_samps,2,5,1,'m')
+plot_trace(m_samps,2,6,1,'m')
 plt.title('HMC inferred parameters')
-plot_trace(k_samps,2,5,2,'k')
-plot_trace(b_samps,2,5,3,'b')
-plot_trace(q1plt,2,5,4,'q1')
-plot_trace(q2plt,2,5,5,'q2')
-plot_trace(r1plt,2,5,6,'r1')
-plot_trace(r2plt,2,5,7,'r2')
-plot_trace(t_samps,2,5,8,'t')
-plot_trace(s1_samps,2,5,9,'s1')
-plot_trace(s2_samps,2,5,10,'s2')
+plot_trace(k_samps,2,6,2,'k')
+plot_trace(b_samps,2,6,3,'b')
+plot_trace(q1plt,2,6,4,'q1')
+plot_trace(q2plt,2,6,5,'q2')
+plot_trace(r1plt,2,6,6,'r1')
+plot_trace(t1_samps,2,6,7,'t1')
+plot_trace(t2_samps,2,6,8,'t2')
+plot_trace(s11_samps,2,6,9,'s11')
+plot_trace(s21_samps,2,6,10,'s21')
+plot_trace(s12_samps,2,6,11,'s12')
+plot_trace(s22_samps,2,6,12,'s22')
 plt.show()
 
 # plot some of the initial marginal state estimates
