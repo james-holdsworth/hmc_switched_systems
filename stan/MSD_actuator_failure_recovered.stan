@@ -36,20 +36,25 @@ parameters {
     // switch parameters
     real<lower=0.0,upper=1.0> s11; // fault in actuator 1
     real<lower=0.0,upper=1.0> s21; // fault in actuator 2
-    real<lower=0.0,upper=1.0> s12; // fault in actuator 1
-    real<lower=0.0,upper=1.0> s22; // fault in actuator 2
+    // real<lower=0.0,upper=1.0> s12; // fault in actuator 1
+    // real<lower=0.0,upper=1.0> s22; // fault in actuator 2
     real<lower=1.0,upper=N> t1; // time of change
     real<lower=t1 ,upper=N> t2; // time of recovre (partial)
     matrix[O,N] z;           // states
 }
 
 model {
+    real s12;
+    real s22;
     vector[2] z_inter;
     vector[2] z_inter2;
     int before;
     int before2;
     real delt;
     real delt2;
+
+    s12 = 1.0;
+    s22 = 1.0;
     // noise stds priors (i think these will draw them from the )
     r ~ cauchy(0, 1.0);
     q ~ cauchy(0, 1.0); // noise on each state assumed independant
@@ -62,8 +67,8 @@ model {
     t2 ~ uniform(t1,N); // prior is uniform over the window
     s11 ~ uniform(0.0,1.0); // incredible quality
     s21 ~ uniform(0.0,1.0); // prior knowledge
-    s12 ~ uniform(0.0,1.0); // incredible quality
-    s22 ~ uniform(0.0,1.0); // prior knowledge
+    // s12 ~ uniform(0.0,1.0); // incredible quality
+    // s22 ~ uniform(0.0,1.0); // prior knowledge
 
     before = floor_search(t1,1,N); // should return an integer, stan doesn't allow real -> int conversion
     before2 = floor_search(t2,before+1,N);

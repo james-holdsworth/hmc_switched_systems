@@ -64,9 +64,9 @@ A2[1,1] = -b_true/m_true
 B2[1,0] = s11/m_true # s1 and s2 modify the actuator gain
 B2[1,1] = s21/m_true
 
-# actuators recover partially
-s12 = 0.9;
-s22 = 0.9;
+# actuators recover completely
+s12 = 1;
+s22 = 1;
 A3[0,1] = 1.0;
 A3[1,0] = -k_true/m_true
 A3[1,1] = -b_true/m_true
@@ -128,7 +128,7 @@ if plot_bool:
 
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
-model_name = 'MSD_actuator_failure_cascaded'
+model_name = 'MSD_actuator_failure_recovered'
 path = 'stan/'
 if Path(path+model_name+'.pkl').is_file():
     model = pickle.load(open(path+model_name+'.pkl', 'rb'))
@@ -161,10 +161,10 @@ q_samps = np.transpose(traces['q'],(1,0))
 r_samps = np.transpose(traces['r'],(1,0))
 t1_samps = traces['t1'].squeeze()
 t2_samps = traces['t2'].squeeze()
-s11_samps = traces['s11'].squeeze()
-s21_samps = traces['s21'].squeeze()
-s12_samps = traces['s12'].squeeze()
-s22_samps = traces['s22'].squeeze()
+s1_samps = traces['s11'].squeeze()
+s2_samps = traces['s21'].squeeze()
+# s12_samps = traces['s12'].squeeze()
+# s22_samps = traces['s22'].squeeze()
 # plot the initial parameter marginal estimates
 q1plt = q_samps[0,:].squeeze()
 q2plt = q_samps[1,:].squeeze()
@@ -172,20 +172,19 @@ r1plt = r_samps[0,:].squeeze()
 r2plt = r_samps[1,:].squeeze()
 
 
-plot_trace(m_samps,2,6,1,'m')
+plot_trace(m_samps,2,5,1,'m')
 plt.title('HMC inferred parameters')
-plot_trace(k_samps,2,6,2,'k')
-plot_trace(b_samps,2,6,3,'b')
-plot_trace(q1plt,2,6,4,'q1')
-plot_trace(q2plt,2,6,5,'q2')
-plot_trace(r1plt,2,6,6,'r1')
-plot_trace(t1_samps,2,6,7,'t1')
-plot_trace(t2_samps,2,6,8,'t2')
-plot_trace(s11_samps,2,6,9,'s11')
-plot_trace(s21_samps,2,6,10,'s21')
-plot_trace(s12_samps,2,6,11,'s12')
-plot_trace(s22_samps,2,6,12,'s22')
+plot_trace(k_samps,2,5,2,'k')
+plot_trace(b_samps,2,5,3,'b')
+plot_trace(q1plt,2,5,4,'q1')
+plot_trace(q2plt,2,5,5,'q2')
+plot_trace(r1plt,2,5,6,'r1')
+plot_trace(r2plt,2,5,7,'r2')
+plot_trace(t1_samps,2,5,8,'t1')
+plot_trace(t2_samps,2,5,9,'t2')
+plot_trace(s1_samps,2,5,10,'s1')
 plt.show()
+
 
 # plot some of the initial marginal state estimates
 for i in range(4):
