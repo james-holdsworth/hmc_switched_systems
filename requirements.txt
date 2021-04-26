@@ -1,6 +1,6 @@
 numpyro
 matplotlib
 numpy
-pystan
+pystan<3.0.0
 scipy
 seaborn
