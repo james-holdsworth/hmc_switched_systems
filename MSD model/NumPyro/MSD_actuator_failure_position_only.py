@@ -6,7 +6,6 @@ Given a window of data where the switch occurs at time t, pystan will sample the
 """
 import os
 import platform
-from jax.dtypes import dtype
 # if platform.system()=='Darwin':
 #     import multiprocessing
 #     multiprocessing.set_start_method("fork")
