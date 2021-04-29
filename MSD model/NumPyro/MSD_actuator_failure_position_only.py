@@ -139,17 +139,17 @@ def model(data):
     }
     iis = jnp.arange(N)
     carry,_ = lax.scan(__model_scanner,carry,iis)
-    zs_1 = carry['z'][0,-1]
-    zs_2 = carry['z'][1,-1]
-
+    z = carry['z']
+    y = carry['y']
+    # return
     # carry,_ = lax.scan(__measurement_scanner,carry,iis)
 
 def __model_scanner(carry,ii):
     param = carry['param']
     mu = __euler_msd(carry['z'][:,ii],carry['u'][:,ii],param)
-    carry['z'] = index_update(carry['z'], index[0,ii+1], numpyro.sample('zs_1', dist.Normal(0,param['q_1'])))
-    carry['z'] = index_update(carry['z'], index[1,ii+1], numpyro.sample('zs_2', dist.Normal(0,param['q_2'])))
-    carry['y'] = index_update(carry['y'],index[0,ii], numpyro.sample('ys_1', dist.Normal(carry['z'][0,ii],carry['param']['r']),obs=carry['y_obs'][0,ii]))
+    carry['z'] = index_update(carry['z'], index[0,ii+1], numpyro.sample('z', dist.Normal(0,param['q_1'])))
+    carry['z'] = index_update(carry['z'], index[1,ii+1], numpyro.sample('z', dist.Normal(0,param['q_2'])))
+    carry['y'] = index_update(carry['y'],index[0,ii], numpyro.sample('y', dist.Normal(carry['z'][0,ii],carry['param']['r']),obs=carry['y_obs'][0,ii]))
     return carry,[]
 
 def __euler_msd(x,u,param):
