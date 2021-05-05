@@ -105,7 +105,7 @@ def plot_trace(param,row,col,pos, param_name='parameter',save=False):
 
     # Plotting
     plt.subplot(col, row, pos)
-    plt.hist(param, 30, density=True);
+    plt.hist(param, 50, density=True);
     sns.kdeplot(param, shade=True)
     plt.xlabel(param_name)
     plt.ylabel('density')
@@ -115,7 +115,7 @@ def plot_trace(param,row,col,pos, param_name='parameter',save=False):
     plt.axvline(cred_max, linestyle=':', color='k', alpha=0.2)
 
     plt.gcf().tight_layout()
-    plt.legend()
+    # plt.legend()
 
 
 def plot_bode(A_smps,B_smps,C_smps,D_smps,A_t,B_t,C_t,D_t,omega,no_plot=300,max_samples=1000, save=False):
