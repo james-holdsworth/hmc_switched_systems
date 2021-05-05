@@ -22,14 +22,14 @@ plot_bool = True
 #----------------- Parameters ---------------------------------------------------#
 
 T = 50             # number of time steps to simulate and record measurements for
-tau = 0.1
+tau = 1
 # true (simulation) parameters
 z1_0 = 3.0  # initial position
 z2_0 = 0.0  # initial velocity
-r1_true = 0.01 # measurement noise standard deviation
+r1_true = 0.05 # measurement noise standard deviation
 # r2_true = 0.5
-q1_true = 0.1*tau # process noise standard deviation
-q2_true = 0.05*tau 
+q1_true = 0.01*tau # process noise standard deviation
+q2_true = 0.001*tau 
 m_true = 2
 b_true = 0.7
 k_true = 0.25
@@ -81,6 +81,10 @@ w_sim[1,:] = np.random.normal(0.0, q2_true, T)
 
 # create some inputs that are random
 u = np.random.uniform(-5,5, T*Nu)
+hold = 10 # T needs to divide cleanly by hold
+u_sub = np.random.uniform(-5,5,int(T/hold*Nu))
+for ii in np.arange(hold):
+    u[(ii*int(T/hold*Nu)):((ii+1)*int(T/hold*Nu))] = u_sub[ii]
 u = np.reshape(u, (Nu,T))
 
 # time of switch
@@ -108,6 +112,7 @@ y = y + v; # add noise to measurements
 if plot_bool:
     plt.subplot(2,1,1)
     plt.plot(u[0,:])
+    plt.plot(u[1,:])
     plt.title('Simulated inputs and measurement used for inference')
     plt.subplot(2, 1, 2)
     plt.plot(z_sim[0,:])
@@ -137,7 +142,7 @@ stan_data = {
     'T':tau
 }
 
-fit = model.sampling(data=stan_data, warmup=1000, iter=2000)
+fit = model.sampling(data=stan_data, warmup=2000, iter=3000)
 traces = fit.extract()
 
 # state samples

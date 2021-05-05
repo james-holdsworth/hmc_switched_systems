@@ -47,9 +47,9 @@ model {
     q[1] ~ cauchy(0, 1.0); // noise on each state assumed independant
     q[2] ~ cauchy(0, 1.0);
     // prior on parameters
-    m ~ normal(2.0, 0.01);
-    k ~ normal(0.25, 0.01);
-    b ~ normal(0.7, 0.01);
+    m ~ normal(2.0, 0.1);
+    k ~ normal(0.25, 0.1);
+    b ~ normal(0.7, 0.1);
 
     t ~ uniform(1,N); // prior is uniform over the window
     s1 ~ uniform(0.0,1.0); // incredible quality
