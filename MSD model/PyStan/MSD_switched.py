@@ -6,6 +6,7 @@ Given a window of data where the switch occurs at time t, pystan will sample the
 """
 
 # general imports
+import os
 from numpy.core.numeric import zeros_like
 import pystan
 import numpy as np
@@ -109,12 +110,13 @@ if plot_bool:
 #----------- USE HMC TO PERFORM INFERENCE ---------------------------#
 # avoid recompiling
 model_name = 'MSD_switched'
-path = 'stan/'
-if Path(path+model_name+'.pkl').is_file():
-    model = pickle.load(open(path+model_name+'.pkl', 'rb'))
+script_path = os.path.dirname(os.path.realpath(__file__))
+path = '/stan/'
+if Path(script_path+path+model_name+'.pkl').is_file():
+    model = pickle.load(open(script_path+path+model_name+'.pkl', 'rb'))
 else:
-    model = pystan.StanModel(file=path+model_name+'.stan')
-    with open(path+model_name+'.pkl', 'wb') as file:
+    model = pystan.StanModel(file=script_path+path+model_name+'.stan')
+    with open(script_path+path+model_name+'.pkl', 'wb') as file:
         pickle.dump(model, file)
 
 stan_data = {
