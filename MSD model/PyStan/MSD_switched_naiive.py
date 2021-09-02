@@ -4,7 +4,11 @@ Generates measurements of the system corresponding to position and acceleration 
 At time t, the system model changes from system1 --> system 2, in the simplest case this is a change in the parameters.
 Given a window of data where the switch occurs at time t, pystan will sample the states, parameters for both systems, and switching time t jointly.
 """
-
+import platform
+if platform.system()=='Darwin':
+    import multiprocessing
+    multiprocessing.set_start_method("fork")
+    
 # general imports
 import os
 from numpy.core.numeric import zeros_like
@@ -56,7 +60,7 @@ B1[1,0] = 1/m_true;
 A2[0,1] = 1.0;
 A2[1,0] = -k_true/m_true/2
 A2[1,1] = -b_true/m_true/2
-B2[1,0] = 1/m_true/2;
+B2[1,0] = 1/m_true/2
 
 z_sim = np.zeros((Nx,T+1), dtype=float) # state history allocation
 

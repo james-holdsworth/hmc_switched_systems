@@ -6,6 +6,12 @@ Given a window of data where the switch occurs at time t, pystan will sample the
 """
 
 # general imports
+
+import platform
+if platform.system()=='Darwin':
+    import multiprocessing
+    multiprocessing.set_start_method("fork")
+    
 import os
 from numpy.core.numeric import zeros_like
 import pystan

@@ -10,7 +10,7 @@ This model is a furata or rotary pendulum model that is based on the [Quanser QU
 ## Virtual environment
 The scripts have been developed in Python 3.8.6 on Ubuntu with `venv` to create a virtual environment. One can create a virtual environment (in a subfolder called `.venv`) by running the following:
 ```
-python venv -m ./.venv
+python -m venv ./.venv
 ``` 
 Use `python` or `python3` depending on your own set up. Once the virtual environment is created, it can be activated by:
 ```
