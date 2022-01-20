@@ -57,7 +57,7 @@ model {
     s22 = 1.0;
     // noise stds priors (i think these will draw them from the )
     r ~ cauchy(0, 1.0);
-    q ~ cauchy(0, 1.0); // noise on each state assumed independant
+    q ~ cauchy(0, 0.01); // noise on each state assumed independant
     // prior on parameters
     m ~ normal(2.0, 0.1);
     k ~ normal(0.25, 0.1);
@@ -100,10 +100,10 @@ model {
     
     // measurement likelihood
     y[1,1:before] ~ normal(z[1,1:before], r[1]); // measurement of first state only
-    y[2,1:before] ~ normal(-(k/m)*z[1,1:before] - (b/m)*z[2,1:before] + (u[1,1:before]+u[2,1:before])/m, r[2]); // acceleration measurement?
+    // y[2,1:before] ~ normal(-(k/m)*z[1,1:before] - (b/m)*z[2,1:before] + (u[1,1:before]+u[2,1:before])/m, r[2]); // acceleration measurement?
     y[1,before+1:before2] ~ normal(z[1,before+1:before2], r[1]); // measurement of first state only
-    y[2,before+1:before2] ~ normal(-(k/m)*z[1,before+1:before2] - (b/m)*z[2,before+1:before2] + (s11*u[1,before+1:before2] + s21*u[2,before+1:before2])/m, r[2]); // acceleration measurement?
+    // y[2,before+1:before2] ~ normal(-(k/m)*z[1,before+1:before2] - (b/m)*z[2,before+1:before2] + (s11*u[1,before+1:before2] + s21*u[2,before+1:before2])/m, r[2]); // acceleration measurement?
 
     y[1,before2+1:N] ~ normal(z[1,before2+1:N], r[1]); // measurement of first state only
-    y[2,before2+1:N] ~ normal(-(k/m)*z[1,before2+1:N] - (b/m)*z[2,before2+1:N] + (s12*u[1,before2+1:N] + s22*u[2,before2+1:N])/m, r[2]); // acceleration measurement?
+    // y[2,before2+1:N] ~ normal(-(k/m)*z[1,before2+1:N] - (b/m)*z[2,before2+1:N] + (s12*u[1,before2+1:N] + s22*u[2,before2+1:N])/m, r[2]); // acceleration measurement?
 }

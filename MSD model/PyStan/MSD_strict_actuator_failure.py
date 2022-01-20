@@ -15,10 +15,14 @@ import os
 from numpy.core.numeric import zeros_like
 import pystan
 import numpy as np
+from matplotlib import rc
 import matplotlib.pyplot as plt
 from helpers import plot_trace
 from pathlib import Path
 import pickle
+
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex=True)
 
 plot_bool = False
 #----------------- Parameters ---------------------------------------------------#
@@ -30,8 +34,8 @@ z1_0 = 3.0  # initial position
 z2_0 = 0.0  # initial velocity
 r1_true = 0.1 # measurement noise standard deviation
 r2_true = 0.01
-q1_true = 0.05 # process noise standard deviation
-q2_true = 0.005 
+q1_true = 0.01 # process noise standard deviation
+q2_true = 0.01 
 m_true = 2
 b_true = 0.7
 k_true = 0.25
@@ -85,7 +89,7 @@ u[:,10:60] = 0.0
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
-    if k<t_switch:
+    if k<(t_switch-1):
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A1,B1,1.0) + w_sim[:,k]
     else:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A2,B2,1.0) + w_sim[:,k]
@@ -157,29 +161,30 @@ r1plt = r_samps[0,:].squeeze()
 r2plt = r_samps[1,:].squeeze()
 
 
-plot_trace(m_samps,2,4,1,'m')
-plt.title('HMC inferred parameters')
-plot_trace(k_samps,2,4,2,'k')
-plot_trace(b_samps,2,4,3,'b')
-plot_trace(q1plt,2,4,4,'q1')
-plot_trace(q2plt,2,4,5,'q2')
-plot_trace(r1plt,2,4,6,'r1')
-plot_trace(r2plt,2,4,7,'r2')
-plot_trace(t_samps,2,4,8,'t')
+plot_trace(m_samps,2,4,1,'m (kg)',true_value=m_true)
+plt.suptitle('HMC Total Actuator Failure Estimation')
+plot_trace(k_samps,2,4,2,'k (N/m)',true_value=k_true)
+plot_trace(b_samps,2,4,3,'b (Ns/m)',true_value=b_true)
+plot_trace(q1plt,2,4,4,'$\mathbf{Q}_{11}$',true_value=q1_true)
+plot_trace(q2plt,2,4,5,'$\mathbf{Q}_{22}$',true_value=q2_true)
+plot_trace(r1plt,2,4,6,'$\mathbf{R}_{11}$',true_value=r1_true)
+plot_trace(r2plt,2,4,7,'$\mathbf{R}_{22}$',true_value=r2_true)
+ax0 = plot_trace(t_samps,2,4,8,'t (s)',true_value=t_switch)
+# ax0.set_xlim([0, T])
 plt.show()
 
 
-# plot some of the initial marginal state estimates
-for i in range(4):
-    if i==1:
-        plt.title('HMC inferred position')
-    plt.subplot(2,2,i+1)
-    plt.hist(z_samps[0,:,i*20+1],bins=30, label='p(x_'+str(i+1)+'|y_{1:T})', density=True)
-    plt.axvline(z_sim[0,i*20+1], label='True', linestyle='--',color='k',linewidth=2)
-    plt.xlabel('x_'+str(i+1))
-plt.tight_layout()
-plt.legend()
-plt.show()
+# # plot some of the initial marginal state estimates
+# for i in range(4):
+#     if i==1:
+#         plt.title('HMC inferred position')
+#     plt.subplot(2,2,i+1)
+#     plt.hist(z_samps[0,:,i*20+1],bins=30, label='p(x_'+str(i+1)+'|y_{1:T})', density=True)
+#     plt.axvline(z_sim[0,i*20+1], label='True', linestyle='--',color='k',linewidth=2)
+#     plt.xlabel('x_'+str(i+1))
+# plt.tight_layout()
+# plt.legend()
+# plt.show()
 
 
 

@@ -14,29 +14,33 @@ import os
 from numpy.core.numeric import zeros_like
 import pystan
 import numpy as np
+from matplotlib import rc
 import matplotlib.pyplot as plt
 from helpers import plot_trace
 from pathlib import Path
 import pickle
 
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex=True)
+
 plot_bool = False
 #----------------- Parameters ---------------------------------------------------#
 
-T = 50             # number of time steps to simulate and record measurements for
+T = 100             # number of time steps to simulate and record measurements for
 
 # true (simulation) parameters
 z1_0 = 3.0  # initial position
 z2_0 = 0.0  # initial velocity
-r1_true = 0.1 # measurement noise standard deviation
-r2_true = 0.3
-q1_true = 0.05 # process noise standard deviation
-q2_true = 0.05 
+r1_true = 0.05 # measurement noise standard deviation
+# r2_true = 0.3
+q1_true = 0.01 # process noise standard deviation
+q2_true = 0.01 
 m_true = 2
 b_true = 0.7
 k_true = 0.25
 
 Nx = 2; # number of states
-Ny = 2; # number of measurements
+Ny = 1; # number of measurements
 Nu = 2; # number of inputs
 
 #----------------- Simulate the system-------------------------------------------#
@@ -95,13 +99,13 @@ u = np.reshape(u, (Nu,T))
 
 # time of switch
 t_switch = 24 # T = t_switch implies no failure
-t_recover = 36 # T = t_switch implies no failure
+t_recover = 77 # T = t_switch implies no failure
 for k in range(T):
     # x1[k+1] = ssm1(x1[k],x2[k],u[k]) + w1[k]
     # x2[k+1] = ssm2(x1[k],x2[k],u[k]) + w2[k]
-    if k<t_switch:
+    if k<t_switch-1:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A1,B1,1.0) + w_sim[:,k]
-    elif k < t_recover:
+    elif k < t_recover-1:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A2,B2,1.0) + w_sim[:,k]
     else:
         z_sim[:,k+1] = z_sim[:,k] + ssm_euler(z_sim[:,k],u[:,k],A3,B3,1.0) + w_sim[:,k]
@@ -109,14 +113,14 @@ for k in range(T):
 # draw measurement noise
 v = np.zeros((Ny,T), dtype=float)
 v[0,:] = np.random.normal(0.0, r1_true, T)
-v[1,:] = np.random.normal(0.0, r2_true, T)
+# v[1,:] = np.random.normal(0.0, r2_true, T)
 
 # simulated measurements 
 y = np.zeros((Ny,T), dtype=float)
 y[0,:] = z_sim[0,:-1]
-y[1,:t_switch] = (-k_true*z_sim[0,:t_switch] -b_true*z_sim[1,:t_switch] + u[0,:t_switch] + u[1,:t_switch])/m_true
-y[1,t_switch:t_recover] = (-k_true*z_sim[0,t_switch:t_recover] -b_true*z_sim[1,t_switch:t_recover] + s11*u[0,t_switch:t_recover] + s21*u[1,t_switch:t_recover])/(m_true) # s1, s2 modified inputs
-y[1,t_recover:] = (-k_true*z_sim[0,t_recover:-1] -b_true*z_sim[1,t_recover:-1] + s12*u[0,t_recover:] + s22*u[1,t_recover:])/(m_true) # s1, s2 modified inputs
+# y[1,:t_switch] = (-k_true*z_sim[0,:t_switch] -b_true*z_sim[1,:t_switch] + u[0,:t_switch] + u[1,:t_switch])/m_true
+# y[1,t_switch:t_recover] = (-k_true*z_sim[0,t_switch:t_recover] -b_true*z_sim[1,t_switch:t_recover] + s11*u[0,t_switch:t_recover] + s21*u[1,t_switch:t_recover])/(m_true) # s1, s2 modified inputs
+# y[1,t_recover:] = (-k_true*z_sim[0,t_recover:-1] -b_true*z_sim[1,t_recover:-1] + s12*u[0,t_recover:] + s22*u[1,t_recover:])/(m_true) # s1, s2 modified inputs
 y = y + v; # add noise to measurements
 
 if plot_bool:
@@ -175,34 +179,49 @@ s2_samps = traces['s21'].squeeze()
 q1plt = q_samps[0,:].squeeze()
 q2plt = q_samps[1,:].squeeze()
 r1plt = r_samps[0,:].squeeze()
-r2plt = r_samps[1,:].squeeze()
+# r2plt = r_samps[1,:].squeeze()
 
 
-plot_trace(m_samps,2,5,1,'m')
-plt.title('HMC inferred parameters')
-plot_trace(k_samps,2,5,2,'k')
-plot_trace(b_samps,2,5,3,'b')
-plot_trace(q1plt,2,5,4,'q1')
-plot_trace(q2plt,2,5,5,'q2')
-plot_trace(r1plt,2,5,6,'r1')
-plot_trace(r2plt,2,5,7,'r2')
-plot_trace(t1_samps,2,5,8,'t1')
-plot_trace(t2_samps,2,5,9,'t2')
-plot_trace(s1_samps,2,5,10,'s1')
+plot_trace(m_samps,2,5,1,'m (kg)',true_value=m_true)
+plt.suptitle('HMC Failure and Recovery Estimation No Accelerometer')
+plot_trace(k_samps,2,5,2,'k (N/m)',true_value=k_true)
+plot_trace(b_samps,2,5,3,'b (Ns/m)',true_value=b_true)
+plot_trace(q1plt,2,5,4,'$\mathbf{Q}_{11}$',true_value=q1_true)
+plot_trace(q2plt,2,5,5,'$\mathbf{Q}_{22}$',true_value=q2_true)
+plot_trace(r1plt,2,5,6,'$\mathbf{R}_{11}$',true_value=r1_true)
+ax0 = plot_trace(t1_samps,2,5,7,'t (s)',true_value=t_switch)
+ax0 = plot_trace(t2_samps,2,5,8,'t (s)',true_value=t_recover)
+# plot_trace(r2plt,2,4,7,'$\mathbf{R}_{22}$',true_value=r2_true)
+plot_trace(s1_samps,2,5,9,'$s_1$ (dim. less)',true_value=s11)
+plot_trace(s2_samps,2,5,10,'$s_2$ (dim. less)',true_value=s21)
+# ax0.set_xlim([0, T])
 plt.show()
+
+# plot_trace(m_samps,2,5,1,'m')
+# plt.title('HMC inferred parameters')
+# plot_trace(k_samps,2,5,2,'k')
+# plot_trace(b_samps,2,5,3,'b')
+# plot_trace(q1plt,2,5,4,'q1')
+# plot_trace(q2plt,2,5,5,'q2')
+# plot_trace(r1plt,2,5,6,'r1')
+# # plot_trace(r2plt,2,5,7,'r2')
+# plot_trace(t1_samps,2,5,8,'t1')
+# plot_trace(t2_samps,2,5,9,'t2')
+# plot_trace(s1_samps,2,5,10,'s1')
+# plt.show()
 
 
 # plot some of the initial marginal state estimates
-for i in range(4):
-    if i==1:
-        plt.title('HMC inferred position')
-    plt.subplot(2,2,i+1)
-    plt.hist(z_samps[0,:,i*20+1],bins=30, label='p(x_'+str(i+1)+'|y_{1:T})', density=True)
-    plt.axvline(z_sim[0,i*20+1], label='True', linestyle='--',color='k',linewidth=2)
-    plt.xlabel('x_'+str(i+1))
-plt.tight_layout()
-plt.legend()
-plt.show()
+# for i in range(4):
+#     if i==1:
+#         plt.title('HMC inferred position')
+#     plt.subplot(2,2,i+1)
+#     plt.hist(z_samps[0,:,i*20+1],bins=30, label='p(x_'+str(i+1)+'|y_{1:T})', density=True)
+#     plt.axvline(z_sim[0,i*20+1], label='True', linestyle='--',color='k',linewidth=2)
+#     plt.xlabel('x_'+str(i+1))
+# plt.tight_layout()
+# plt.legend()
+# plt.show()
 
 
 

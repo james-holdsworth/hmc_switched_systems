@@ -43,8 +43,8 @@ model {
     int before;
     real delt;
     // noise stds priors (i think these will draw them from the )
-    r ~ cauchy(0, 1.0);
-    q ~ cauchy(0, 1.0); // noise on each state assumed independant
+    r ~ cauchy(0, 0.01);
+    q ~ cauchy(0, 0.01); // noise on each state assumed independant
     // prior on parameters
     m ~ normal(2.0, 0.1);
     k ~ normal(0.25, 0.1);

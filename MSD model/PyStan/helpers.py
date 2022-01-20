@@ -95,7 +95,7 @@ def generate_data(no_obs, a, b, sigmae):
     return y, u, Phi
 
 
-def plot_trace(param,row,col,pos, param_name='parameter',save=False):
+def plot_trace(param,row,col,pos, param_name='parameter',true_value=np.NaN,save=False):
     """Plot the trace and posterior of a parameter."""
 
     # Summary statistics
@@ -106,17 +106,21 @@ def plot_trace(param,row,col,pos, param_name='parameter',save=False):
     # Plotting
     plt.subplot(col, row, pos)
     plt.hist(param, 50, density=True);
-    sns.kdeplot(param, shade=True)
+    ax = sns.kdeplot(param, shade=True)
     plt.xlabel(param_name)
     plt.ylabel('density')
-    plt.axvline(mean, color='r', lw=2, linestyle='--', label='mean')
-    plt.axvline(median, color='c', lw=2, linestyle='--', label='median')
+    
+    plt.axvline(mean, color='c', lw=2, linestyle='--', label='mean')
+    # plt.axvline(median, color='c', lw=2, linestyle='--', label='median')
+    if ~np.isnan(true_value):
+        plt.axvline(true_value, color='r', lw=2, linestyle='--', label='true')
     plt.axvline(cred_min, linestyle=':', color='k', alpha=0.2, label='95% CI')
     plt.axvline(cred_max, linestyle=':', color='k', alpha=0.2)
-
+    plt.gcf().set_size_inches(3*row,col)
+    plt.gcf().set_dpi(150)
     plt.gcf().tight_layout()
     # plt.legend()
-
+    return ax
 
 def plot_bode(A_smps,B_smps,C_smps,D_smps,A_t,B_t,C_t,D_t,omega,no_plot=300,max_samples=1000, save=False):
     """plot bode diagram from estimated system samples and true sys"""
